@@ -1,0 +1,33 @@
+---
+- name: Create node.js app directory
+  file:
+    path: "{{ nodejs_app_dir }}"
+    state: directory
+    mode: '0755'
+
+- name: Copy node.js app files
+  copy:
+    src: "{{ item }}"
+    dest: "{{ nodejs_app_dir }}/{{ item }}"
+    mode: '0644'
+  loop:
+    - app.js
+    - package.json
+    - Dockerfile
+
+- name: Build node.js Docker image
+  community.docker.docker_image:
+    name: "{{ nodejs_app_name }}"
+    build:
+      path: "{{ nodejs_app_dir }}"
+    source: build
+    state: present
+
+- name: Run Node.js container
+  community.docker.docker_container:
+    name: "{{ nodejs_container_name }}"
+    image: "{{ nodejs_app_name }}"
+    state: started
+    restart_policy: always
+    ports:
+      - "3000:3000"

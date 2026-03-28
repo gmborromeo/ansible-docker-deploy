@@ -9,3 +9,5 @@
   roles:
     - docker
     - app
+    - nodejs
+    - nginx

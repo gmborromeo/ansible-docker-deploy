@@ -1,9 +1,18 @@
 ---
-#App settings
+#Flask App settings
 app_name: myapp
 app_port: 5000
 app_dir: /opt/myapp
 container_name: myapp-container
+
+#Node.js App settings
+nodejs_app_name: nodejsapp
+nodejs_app_dir: /opt/nodejsapp
+nodejs_container_name: nodejs-container
+
+#Nginx static site
+nginx_app_dir: /opt/nginxapp
+nginx_container_name: nginx-container
 
 #Docker settings
 docker_user: "{{ ansible_user_id }}"

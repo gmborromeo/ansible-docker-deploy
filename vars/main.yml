@@ -1,0 +1,9 @@
+---
+#App settings
+app_name: myapp
+app_port: 5000
+app_dir: /opt/myapp
+container_name: myapp-container
+
+#Docker settings
+docker_user: "{{ ansible_user_id }}"

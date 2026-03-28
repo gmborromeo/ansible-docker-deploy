@@ -1,0 +1,35 @@
+---
+- name: Create app directory
+  file:
+    path: "{{ app_dir }}"
+    state: directory
+    mode: '0755'
+
+- name: Copy all files
+  copy:
+    src: app.py
+    dest: "{{ app_dir }}/app.py"
+    mode: '0644'
+
+- name: Copy Dockerfile
+  copy:
+    src: Dockerfile
+    dest: "{{ app_dir }}/Dockerfile"
+    mode: '0644'
+
+- name: Build Dockerfile image
+  community.docker.docker_image:
+    name: "{{ app_name }}"
+    build:
+      path: "{{ app_dir }}"
+    source: build
+    state: present
+
+- name: Run the app container
+  community.docker.docker_container:
+    name: "{{ container_name }}"
+    image: "{{ app_name }}"
+    state: started
+    restart_policy: always
+    ports:
+      - "{{ app_port }}:{{ app_port }}"

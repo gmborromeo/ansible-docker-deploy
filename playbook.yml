@@ -11,3 +11,15 @@
     - app
     - nodejs
     - nginx
+
+  post_tasks:
+    - name: Deployment Summary
+      debug:
+        msg:
+          - "==============================="
+          - "All apps deployed successfully!"
+          - "==============================="
+          - "Flask   → {{ flask_status }}"
+          - "Node.js → {{ nodejs_status }}"
+          - "Nginx   → {{ nginx_status }}"
+          - "==============================="

@@ -16,3 +16,8 @@ nginx_container_name: nginx-container
 
 #Docker settings
 docker_user: "{{ ansible_user_id }}"
+
+#Deployment status tracking
+flask_status: "failed"
+nodejs_status: "failed"
+nginx_status: "failed"

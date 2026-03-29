@@ -34,6 +34,31 @@
       ports:
         - "3000:3000"
 
+  - name: Wait for node.js app to be ready
+    wait_for:
+      host: localhost
+      port: 3000
+      delay: 3
+      timeout: 30
+      msg: "Node.js app did not start on port 3000"
+
+  - name: Check node.js app is responding
+    uri:
+      url: "http://localhost:3000"
+      method: GET
+      status_code: 200
+    register: nodejs_health
+    retries: 3
+    delay: 3
+
+  - name: Node.js check result
+    debug:
+      msg: "Node.js is UP - responded with HTTP {{ nodejs_health.status }}"
+
+  - name: Set Node.js status success
+    set_fact:
+      nodejs_status: "UP - http://localhost:3000"
+
   rescue:
     - name: Node.js deploymend failed
       debug:
@@ -41,9 +66,13 @@
           Node.js deployment failed!
           Check app.js and package.json in {{ nodejs_app_dir }}.
 
+    - name: Set Node.js status failed
+      set_fact:
+        nodejs_status: "FAILED"      
+
   always:
     - name: Node.js deploy status
       debug:
-        msg: "Node.js role finished - check above for errors."
-        
-                
+        msg: "Node.js role finished - status {{ nodejs_status }}."
+
+

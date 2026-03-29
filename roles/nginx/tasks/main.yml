@@ -25,14 +25,44 @@
       volumes:
         - "{{ nginx_app_dir }}:/usr/share/nginx/html:ro"
 
+  - name: Wait for Nginx to be ready
+    wait_for:
+      host: localhost
+      port: 8080
+      delay: 3
+      timeout: 30
+      msg: "Nginx did not start on port 8080"
+  
+  - name: Check Nginx is responding
+    uri:
+      url: "http://localhost:8080"
+      method: GET
+      status_code: 200
+    register: nginx_health
+    retries: 3
+    delay: 3
+
+  - name: Nginx health check result
+    debug:
+      msg: "Nginx is UP - responded with HTTP {{ nginx_health.status }}"
+
+  - name: Set Nginx status success
+    set_fact:
+      nginx_status: "UP — http://localhost:8080"
+
+
   rescue:
     - name: Nginx deployment failed
       debug:
         msg: >
           Nginx deployment failed!
           Check index.html in {{ nginx_app_dir }}
+    
+    - name: Set Nginx status failed
+      set_fact:
+        nginx_status: "FAILED"
 
   always:
     - name: Nginx deploy status
       debug:
-        msg: "Nginx role finished - check above for errors."        
+        msg: "Nginx role finished — status: {{ nginx_status }}"

@@ -36,13 +36,43 @@
       ports:
         - "{{ app_port }}:{{ app_port }}"
 
+  - name: Wait for Flask to be ready
+    wait_for:
+      host: localhost
+      port: "{{ app_port }}"
+      delay: 3
+      timeout: 30
+      msg: "Flask app did not start on port {{ app_port }}"
+  
+  - name: Check flask app is responding
+    uri:
+      url: "http://localhost:{{ app_port }}"
+      method: GET
+      status_code: 200
+    register: flask_health
+    retries: 3
+    delay: 3
+
+  - name: Flask health check result
+    debug:
+      msg: "Flask is up - responded with HTTP {{ flask_health.status }}"
+  
+  - name: Set Flask status success
+    set_fact:
+      flask_status: "UP - http://localhost:5000"
+
   rescue:
     - name: Flask deployment failed
       debug:
         msg: >
           Flask app deployment failed!
           Check the Dockerfile and app.py in {{ app_dir }}.
+
+    - name: Set Flask status failed
+      set_fact:
+        flask_status: "FAILED"
+
   always:
     - name: Flask deploy status
       debug:
-        msg: "Flask role finished - check above for errors."    
+        msg: "Flask role finished - status: {{ flask_status }}"    

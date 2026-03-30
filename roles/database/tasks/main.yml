@@ -1,0 +1,109 @@
+---
+- name: Deploy PostgreSQL data directory
+  block:
+    - name: Create a PostgreSQL data directory
+      file:
+        path: "{{ db_data_dir }}"
+        state: directory
+        mode: '0755'
+
+    - name: Run PostgreSQL container
+      community.docker.docker_container:
+        name: "{{ db_container_name }}"
+        image: postgres:15-alpine
+        state: started
+        restart_policy: always
+        ports:
+          - "{{ db_port }}:{{ db_port }}"
+        env:
+          POSTGRES_DB:        "{{ db_name }}"
+          POSTGRES_USER:      "{{ db_user }}"
+          POSTGRES_PASSWORD:  "{{ db_password }}"
+        volumes:
+          - "{{ db_data_dir }}:/var/lib/postgresql/data"
+        networks:
+          - name: appnetwork
+
+    - name: Wait for PostreSQL to be ready
+      wait_for:
+        host: localhost
+        port: "{{ db_port }}"
+        delay: 5
+        timeout: 60
+        msg: "PostgreSQL did not start on port {{ db_port }}"
+
+    - name: Install psycopg2 for Ansible PostgreSQL modules
+      apt:
+        name: python3-psycopg2
+        state: present
+
+    - name: Create database user
+      community.postgresql.postgresql_user:
+        login_host: localhost
+        login_port:     "{{ db_port }}"
+        login_user:     "{{ db_user }}"
+        login_password: "{{ db_password }}"
+        login_db: postgres
+        name:           "{{ db_user }}"
+        password:       "{{ db_password }}"
+        state: present
+
+    - name: Create application database
+      community.postgresql.postgresql_db:
+        login_host: localhost
+        login_port:     "{{ db_port }}"
+        login_user:     "{{ db_user }}"
+        login_password: "{{ db_password }}"
+        name:           "{{ db_name }}"
+        owner:          "{{ db_user }}"
+        state: present
+    
+    - name: Create application database
+      community.postgresql.postgresql_query:
+        login_host: localhost
+        login_port:     "{{ db_port }}"
+        login_user:     "{{ db_user }}"
+        login_password: "{{ db_password }}"
+        db:             "{{ db_name }}"
+        query: |
+          CREATE TABLE IF NOT EXISTS users (
+            id SERIAL PRIMARY KEY,
+            name VARCHAR(100) NOT NULL,
+            email VARCHAR(100) UNIQUE NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+          );
+
+    - name: Insert sample data
+      community.postgresql.postgresql_query:
+        login_host: localhost
+        login_port:     "{{ db_port }}"
+        login_user:     "{{ db_user }}"
+        login_password: "{{ db_password }}"
+        db:             "{{ db_name }}"
+        query: |
+          INSERT INTO users (name, email)
+          VALUES
+            ('John Doe', 'johndoe@example.com'),
+            ('Gerald Borromeo', 'geraldb@example.com')
+          ON CONFLICT (email) DO NOTHING;
+
+    - name: Set database status success
+      set_fact:
+        db_status: "UP - localhost:5432"
+
+  rescue:
+    - name: Database deployment failed
+      debug:
+        msg: >
+          PostgrelSQL deployment failed!
+          Check Docker and PostgreSQL container logs.
+
+
+    - name: Set database status Failed
+      set_fact:
+        db_status: "FAILED"
+
+  always:
+    - name: Database deploy status
+      debug:
+        msg: "Database role finished - status: {{ db_status }}"                      

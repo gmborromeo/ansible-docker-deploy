@@ -1,0 +1,7 @@
+---
+db_name: appdb
+db_user: appuser
+db_password: "{{ vault_db_password }}"
+db_port: 5432
+db_container_name: postgres-container
+db_data_dir: /opt/postgres/data

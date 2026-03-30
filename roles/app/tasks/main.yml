@@ -35,6 +35,8 @@
       restart_policy: always
       ports:
         - "{{ app_port }}:{{ app_port }}"
+      networks:
+          - name: appnetwork
 
   - name: Wait for Flask to be ready
     wait_for:
